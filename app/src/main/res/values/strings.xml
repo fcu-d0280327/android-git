@@ -1,3 +1,6 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">WIFI-找找</string>
+    <string name="title_map">地圖模式</string>
+    <string name="title_list">熱點清單</string>
+    <string name="title_more">其他</string>
 </resources>
