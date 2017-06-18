@@ -1,9 +1,15 @@
 package com.example.user.myapplication;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.widget.FrameLayout;
@@ -36,9 +42,25 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
-    WifiManager wifi;
     private TextView mTextMessage;
     private FrameLayout frameContent;
+
+
+    //wifi-part
+    private static final int PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION = 1001;
+    private WifiManager wifiManager;
+    private List wifiSearch;
+    private int wifiCount = 0;
+    private static final Map wifichannel = new HashMap();
+    static{
+        wifichannel.put("2412", "2.4G Ch01");wifichannel.put("2417", "2.4G Ch02");
+        wifichannel.put("2422", "2.4G Ch03");wifichannel.put("2427", "2.4G Ch04");
+        wifichannel.put("2432", "2.4G Ch05");wifichannel.put("2437", "2.4G Ch06");
+        wifichannel.put("2442", "2.4G Ch07");wifichannel.put("2447", "2.4G Ch08");
+        wifichannel.put("2452", "2.4G Ch09");wifichannel.put("2457", "2.4G Ch10");
+        wifichannel.put("2462", "2.4G Ch11");wifichannel.put("2467", "2.4G Ch12");
+        wifichannel.put("2472", "2.4G Ch13");wifichannel.put("2484", "2.4G Ch14");
+    }
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -53,6 +75,9 @@ public class MainActivity extends AppCompatActivity {
                     mTextMessage.setText(R.string.title_list);
                     return true;
                 case R.id.navigation_notifications:
+                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+                        requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION);
+                    }
                     frameContent.removeAllViews();
                     checkWifi();
                     return true;
@@ -75,8 +100,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkWifi(){
-        wifi = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        if(wifi.isWifiEnabled() == false) {
+        wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        if(wifiManager.isWifiEnabled() == false) {
             AlertDialog.Builder dialog = new AlertDialog.Builder(this);
             dialog.setTitle("Remind");
             dialog.setMessage("Your Wi-Fi is not enabled, enable?");
@@ -85,10 +110,10 @@ public class MainActivity extends AppCompatActivity {
             dialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    wifi.setWifiEnabled(true);
+                    wifiManager.setWifiEnabled(true);
                     Toast.makeText(getApplicationContext(), "wifi is disabled..making it enabled", Toast.LENGTH_LONG).show();
                     frameContent.removeAllViews();
-                    showWifiList();
+                    scanWifi();
                 }
             });
             dialog.setNegativeButton("NO", new DialogInterface.OnClickListener() {
@@ -100,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
             });
             dialog.show();
         }else{
-            //TODO Start Scan Wifi
+            scanWifi();
         }
     }
 
@@ -121,9 +146,30 @@ public class MainActivity extends AppCompatActivity {
         frameContent.addView(ib, lp);
     }
 
-    private void showWifiList(){
+    private void setWifiMessage(String message){
         TextView wifiMessage = new TextView(this);
-        wifiMessage.setText("hi");
+        wifiMessage.setText(message);
         frameContent.addView(wifiMessage);
+    }
+
+    private void scanWifi(){
+        wifiManager.startScan();
+        List<ScanResult> mWifiScanResultList = wifiManager.getScanResults();
+        List<WifiConfiguration> mWifiConfigurationList = wifiManager.getConfiguredNetworks();
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        setWifiMessage("周圍Wifi: " + mWifiScanResultList.size() +
+                ", 手機內存: " + mWifiConfigurationList.size() +
+                ", 目前連線: " + wifiInfo.getSSID());
+        for(int i = 0 ; i < mWifiScanResultList.size() ; i++ )
+        {
+            Log.d("info", mWifiScanResultList.get(i).SSID);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                                           int[] grantResults) {
+        if (requestCode == PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED) {}
     }
 }
