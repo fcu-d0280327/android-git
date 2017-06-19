@@ -42,16 +42,15 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
-    private TextView mTextMessage;
     private FrameLayout frameContent;
 
 
     //wifi-part
     private static final int PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION = 1001;
     private WifiManager wifiManager;
-    private List wifiSearch;
-    private int wifiCount = 0;
-    private static final Map wifichannel = new HashMap();
+    ArrayList<HashMap<String, String>> wifiList = new ArrayList<HashMap<String, String>>();
+    SimpleAdapter adapter;
+    private static final Map<String, String> wifichannel = new HashMap<String, String>();
     static{
         wifichannel.put("2412", "2.4G Ch01");wifichannel.put("2417", "2.4G Ch02");
         wifichannel.put("2422", "2.4G Ch03");wifichannel.put("2427", "2.4G Ch04");
@@ -69,10 +68,12 @@ public class MainActivity extends AppCompatActivity {
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.navigation_home:
-                    mTextMessage.setText(R.string.title_map);
+                    frameContent.removeAllViews();
+                    setWifiMessage(getString(R.string.title_map));
                     return true;
                 case R.id.navigation_dashboard:
-                    mTextMessage.setText(R.string.title_list);
+                    frameContent.removeAllViews();
+                    setWifiMessage(getString(R.string.title_list));
                     return true;
                 case R.id.navigation_notifications:
                     if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
@@ -92,7 +93,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mTextMessage = (TextView) findViewById(R.id.message);
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
@@ -129,6 +129,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+
     private void setRefreshImage(){
         ImageButton ib = new ImageButton(this);
         ib.setImageResource(R.drawable.icons8_refresh_48);
@@ -148,8 +150,25 @@ public class MainActivity extends AppCompatActivity {
 
     private void setWifiMessage(String message){
         TextView wifiMessage = new TextView(this);
+        wifiMessage.setTextSize(12);
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(30, 0, 0, 0);
         wifiMessage.setText(message);
-        frameContent.addView(wifiMessage);
+        frameContent.addView(wifiMessage, lp);
+    }
+
+    private void setWifiList(){
+        ListView listView = new ListView(this);
+        FrameLayout.LayoutParams fl = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT);
+        fl.setMargins(25, 85, 0, 0);
+        this.adapter = new SimpleAdapter(MainActivity.this, wifiList, R.layout.wifi_list, new String[] {"ssid","power","freq"}, new int[] {R.id.ssid, R.id.power, R.id.freq});
+        listView.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
+        frameContent.addView(listView, fl);
     }
 
     private void scanWifi(){
@@ -159,11 +178,26 @@ public class MainActivity extends AppCompatActivity {
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
         setWifiMessage("周圍Wifi: " + mWifiScanResultList.size() +
                 ", 手機內存: " + mWifiConfigurationList.size() +
-                ", 目前連線: " + wifiInfo.getSSID());
+                "\n目前連線: " + wifiInfo.getSSID());
+        wifiList.clear();
         for(int i = 0 ; i < mWifiScanResultList.size() ; i++ )
         {
             Log.d("info", mWifiScanResultList.get(i).SSID);
+            HashMap item = new HashMap();
+            item.put("ssid", "名稱:" + mWifiScanResultList.get(i).SSID);
+            item.put("power","強度:" + new String(mWifiScanResultList.get(i).level+" dBm"));
+            String wifichn = wifichannel.containsKey(new String(String.valueOf(mWifiScanResultList.get(i).frequency)))? wifichannel.get(new String(String.valueOf(mWifiScanResultList.get(i).frequency))):"5G";
+            item.put("freq", "無線信道:" + wifichn);
+            wifiList.add(item);
         }
+        Collections.sort(wifiList, new Comparator<HashMap>() {
+            @Override
+            public int compare(HashMap lhs, HashMap rhs) {
+                return ((String) lhs.get("power")).compareTo((String) rhs.get("power"));
+            }
+        });
+        Log.d("power sort", wifiList.toString());
+        setWifiList();
     }
 
     @Override
