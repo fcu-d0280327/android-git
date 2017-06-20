@@ -317,7 +317,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mark.setTitle(wifiName);
 
                 marker.add(mark);
-                drawMarkers(marker);
+                //drawMarkers(marker);
 
                 Log.v("wifi-data", wifiName + ";" + wifiAddr);
             }
@@ -345,15 +345,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
         // Add a marker in Sydney, Australia,
         // and move the map's camera to the same location.
-        //LatLng sydney = new LatLng(-33.852, 151.211);
-        /*mMap.addMarker(new MarkerOptions().position(sydney)
-                .title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));*/
+        LatLng sydney = new LatLng(-33.852, 151.211);
+        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney")); //first marker
+        //mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+
+        LatLng taiwan = new LatLng(23.5, 121);
+        mMap.addMarker(new MarkerOptions().position(taiwan).title("Marker in Taiwan")); //second marker
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(taiwan));
     }
 
-    HashMap<Marker, MyMarkerData> mDataMap = new HashMap<>();
+    /*HashMap<Marker, MyMarkerData> mDataMap = new HashMap<>();
 
     public void drawMarkers(ArrayList<MyMarkerData> data) {
         Marker m;
@@ -361,5 +365,5 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             m = mMap.addMarker(new MarkerOptions().position(object.getLatLng()).title(object.getTitle()));
             mDataMap.put(m, object);
         }
-    }
+    }*/
 }
