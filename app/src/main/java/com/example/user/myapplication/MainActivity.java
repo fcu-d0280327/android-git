@@ -138,6 +138,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        getPetsFromFirebase();
     }
 
 
@@ -281,8 +283,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     };
 
     private void refreshPetList(List<Wifi> pets) {
-        wifi_adapter.clear();
-        wifi_adapter.addAll(pets);
+        try {
+            wifi_adapter.clear();
+            wifi_adapter.addAll(pets);
+        }catch (NullPointerException e){
+
+        }
+
     }
 
     class FirebaseThread extends Thread {
