@@ -35,6 +35,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -42,12 +50,13 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private FrameLayout frameContent;
     private FrameLayout frameWifi;
     private FrameLayout frameWifiOpenData;
 
+    GoogleMap mMap;
     /**
      * global variable for second tab
      * third tab is about message of wifi from open data
@@ -126,6 +135,9 @@ public class MainActivity extends AppCompatActivity {
         frameContent = (FrameLayout) findViewById(R.id.content);
         frameWifi = (FrameLayout) findViewById(R.id.frameWifi);
         frameWifiOpenData = (FrameLayout) findViewById(R.id.frameWifiOpenData);
+
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
     }
 
 
@@ -280,17 +292,33 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
             List<Wifi> wifis = new ArrayList<>();
+            ArrayList<MyMarkerData> marker = new ArrayList<>();
             for (DataSnapshot ds : dataSnapshot.getChildren()) {
                 DataSnapshot dsWifiName = ds.child("NAME");
                 DataSnapshot dsWifiAddr = ds.child("ADDR");
+                DataSnapshot dsLATITUDE = ds.child("LATITUDE");
+                DataSnapshot dsLONGITUDE = ds.child("LONGITUDE");
 
                 String wifiName = (String)dsWifiName.getValue();
                 String wifiAddr = (String)dsWifiAddr.getValue();
+
+                String latitude = (String)dsLATITUDE.getValue();
+                String longitude = (String)dsLONGITUDE.getValue();
+
+                LatLng combine = new LatLng (Float.parseFloat(latitude),Float.parseFloat(longitude));
 
                 Wifi aWifi = new Wifi();
                 aWifi.setName(wifiName);
                 aWifi.setAddr(wifiAddr);
                 wifis.add(aWifi);
+
+                MyMarkerData mark = new MyMarkerData();
+                mark.setLatLng(combine);
+                mark.setTitle(wifiName);
+
+                marker.add(mark);
+                drawMarkers(marker);
+
                 Log.v("wifi-data", wifiName + ";" + wifiAddr);
             }
             Message msg = new Message();
@@ -314,5 +342,24 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("firebase-error", databaseError.getMessage());
             }
         });
+    }
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        // Add a marker in Sydney, Australia,
+        // and move the map's camera to the same location.
+        //LatLng sydney = new LatLng(-33.852, 151.211);
+        /*mMap.addMarker(new MarkerOptions().position(sydney)
+                .title("Marker in Sydney"));
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));*/
+    }
+
+    HashMap<Marker, MyMarkerData> mDataMap = new HashMap<>();
+
+    public void drawMarkers(ArrayList<MyMarkerData> data) {
+        Marker m;
+        for (MyMarkerData object: data) {
+            m = mMap.addMarker(new MarkerOptions().position(object.getLatLng()).title(object.getTitle()));
+            mDataMap.put(m, object);
+        }
     }
 }
