@@ -137,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
 
      /* wifi list view */
      private void wifilistview(){
-         ListView lvPets = (ListView)findViewById(R.id.listview_pet);
+         ListView lvPets = (ListView)findViewById();
         /*  need debug */
          adapter2 = new PetArrayAdapter(this, new ArrayList<Pet>());
          lvPets.setAdapter(adapter2);
