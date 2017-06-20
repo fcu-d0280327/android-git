@@ -1,49 +1,83 @@
 package com.example.user.myapplication;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.SimpleAdapter;
 import android.widget.TextView;
-//Wifi list
+import android.widget.Toast;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import android.net.wifi.ScanResult;
-import android.net.wifi.WifiManager;
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.view.Menu;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.ListView;
-import android.widget.SimpleAdapter;
-import android.widget.Toast;
+//Wifi list
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
 
 public class MainActivity extends AppCompatActivity {
 
     private FrameLayout frameContent;
 
+    /* wifi list view*/
+    private PetArrayAdapter adapter2 = null;
+
+    private static final int LIST_PETS = 1;
+
+    private Handler handler = new Handler() {
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case LIST_PETS: {
+                    List<Pet> pets = (List<Pet>)msg.obj;
+                    refreshPetList(pets);
+                    break;
+                }
+            }
+        }
+    };
+
+    private void refreshPetList(List<Pet> pets) {
+        adapter2.clear();
+        adapter2.addAll(pets);
+    }
+    /* wifi list view*/
 
     //wifi-part
     private static final int PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION = 1001;
@@ -73,7 +107,9 @@ public class MainActivity extends AppCompatActivity {
                     return true;
                 case R.id.navigation_dashboard:
                     frameContent.removeAllViews();
-                    setWifiMessage(getString(R.string.title_list));
+                    /* wifi list view */
+                    wifilistview() ;
+                    /* wifi list view */
                     return true;
                 case R.id.navigation_notifications:
                     if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
@@ -98,6 +134,18 @@ public class MainActivity extends AppCompatActivity {
 
         frameContent = (FrameLayout) findViewById(R.id.content);
     }
+
+     /* wifi list view */
+     private void wifilistview(){
+         ListView lvPets = (ListView)findViewById(R.id.listview_pet);
+        /*  need debug */
+         adapter2 = new PetArrayAdapter(this, new ArrayList<Pet>());
+         lvPets.setAdapter(adapter2);
+
+         getPetsFromFirebase();
+     }
+    /* wifi list view */
+
 
     private void checkWifi(){
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
@@ -206,4 +254,100 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {}
     }
+
+
+    /* wifi list view*/
+    class FirebaseThread extends Thread {
+
+        private DataSnapshot dataSnapshot;
+
+        public FirebaseThread(DataSnapshot dataSnapshot) {
+            this.dataSnapshot = dataSnapshot;
+        }
+
+        @Override
+        public void run() {
+            List<Pet> lsPets = new ArrayList<>();
+            for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                DataSnapshot dsSName = ds.child("NAME");
+                DataSnapshot dsAKind = ds.child("ADDR");
+
+                String shelterName = (String)dsSName.getValue();
+                String kind = (String)dsAKind.getValue();
+
+                DataSnapshot dsImg = ds.child("Picture1");
+                String imgUrl = (String) dsImg.getValue();
+                Bitmap petImg = getImgBitmap(imgUrl);
+
+                Pet aPet = new Pet();
+                aPet.setShelter(shelterName);
+                aPet.setKind(kind);
+                aPet.setImgUrl(petImg);
+                lsPets.add(aPet);
+                Log.v("AdoptPet", shelterName + ";" + kind);
+            }
+            Message msg = new Message();
+            msg.what = LIST_PETS;
+            msg.obj = lsPets;
+            handler.sendMessage(msg);
+        }
+    }
+
+    private void getPetsFromFirebase() {
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference myRef = database.getReference("");
+        myRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                new FirebaseThread(dataSnapshot).start();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Log.v("AdoptPet", databaseError.getMessage());
+            }
+        });
+    }
+
+    private Bitmap getImgBitmap(String imgUrl) {
+        try {
+            URL url = new URL(imgUrl);
+            Bitmap bm = BitmapFactory.decodeStream(url.openConnection()
+                    .getInputStream());
+            return bm;
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    class PetArrayAdapter extends ArrayAdapter<Pet> {
+        Context context;
+
+        public PetArrayAdapter(Context context, List<Pet> items) {
+            super(context, 0, items);
+            this.context = context;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            LayoutInflater inflater = LayoutInflater.from(context);
+            LinearLayout itemlayout = null;
+            if (convertView == null) {
+                itemlayout = (LinearLayout) inflater.inflate(R.layout.pet_item, null);
+            } else {
+                itemlayout = (LinearLayout) convertView;
+            }
+            Pet item = (Pet) getItem(position);
+            TextView tvShelter = (TextView) itemlayout.findViewById(R.id.tv_shelter);
+            tvShelter.setText(item.getShelter());
+            TextView tvKind = (TextView) itemlayout.findViewById(R.id.tv_kind);
+            tvKind.setText(item.getKind());
+            return itemlayout;
+        }
+    }
+    /* wifi list view*/
+
 }
