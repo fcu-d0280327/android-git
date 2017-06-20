@@ -5,9 +5,9 @@ import android.graphics.Bitmap;
 public class Wifi {
 
     private String addr;
-
     private String name;
     private String LATITUDE;
+    private String LONGITUDE;
 
     public String getName() {
         return name;
@@ -29,7 +29,7 @@ public class Wifi {
         this.LONGITUDE = LONGITUDE;
     }
 
-    private String LONGITUDE;
+
     public String getAddr() {
         return addr;
     }

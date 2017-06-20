@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private FrameLayout frameWifi;
     private FrameLayout frameWifiOpenData;
 
-    GoogleMap mMap;
+    private GoogleMap mMap;
     /**
      * global variable for second tab
      * third tab is about message of wifi from open data
@@ -270,6 +270,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 case LIST_PETS: {
                     List<Wifi> wifis = (List<Wifi>)msg.obj;
                     refreshPetList(wifis);
+                    for(Wifi wifi: wifis){
+                        LatLng mark = new LatLng (Float.parseFloat(wifi.getLATITUDE()),Float.parseFloat(wifi.getLONGITUDE()));
+                        mMap.addMarker(new MarkerOptions().position(mark).title(wifi.getName()));
+                    }
                     break;
                 }
             }
@@ -292,7 +296,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         @Override
         public void run() {
             List<Wifi> wifis = new ArrayList<>();
-            ArrayList<MyMarkerData> marker = new ArrayList<>();
             for (DataSnapshot ds : dataSnapshot.getChildren()) {
                 DataSnapshot dsWifiName = ds.child("NAME");
                 DataSnapshot dsWifiAddr = ds.child("ADDR");
@@ -305,21 +308,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 String latitude = (String)dsLATITUDE.getValue();
                 String longitude = (String)dsLONGITUDE.getValue();
 
-                LatLng combine = new LatLng (Float.parseFloat(latitude),Float.parseFloat(longitude));
-
                 Wifi aWifi = new Wifi();
                 aWifi.setName(wifiName);
                 aWifi.setAddr(wifiAddr);
+                aWifi.setLATITUDE(latitude);
+                aWifi.setLONGITUDE(longitude);
                 wifis.add(aWifi);
 
-                MyMarkerData mark = new MyMarkerData();
-                mark.setLatLng(combine);
-                mark.setTitle(wifiName);
-
-                marker.add(mark);
-                //drawMarkers(marker);
-
-                Log.v("wifi-data", wifiName + ";" + wifiAddr);
+                Log.v("wifi-data", wifiName + ";" + wifiAddr + ";" + latitude);
             }
             Message msg = new Message();
             msg.what = LIST_PETS;
@@ -346,24 +342,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        // Add a marker in Sydney, Australia,
-        // and move the map's camera to the same location.
-        LatLng sydney = new LatLng(-33.852, 151.211);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney")); //first marker
-        //mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-
-        LatLng taiwan = new LatLng(23.5, 121);
-        mMap.addMarker(new MarkerOptions().position(taiwan).title("Marker in Taiwan")); //second marker
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(taiwan));
+        LatLng taiwan = new LatLng(24.1788209, 120.64451117);
+        mMap.addMarker(new MarkerOptions().position(taiwan).title("Marker in Taiwan")
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))); //second marker
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(taiwan, 14.0f));
     }
 
-    /*HashMap<Marker, MyMarkerData> mDataMap = new HashMap<>();
-
-    public void drawMarkers(ArrayList<MyMarkerData> data) {
-        Marker m;
-        for (MyMarkerData object: data) {
-            m = mMap.addMarker(new MarkerOptions().position(object.getLatLng()).title(object.getTitle()));
-            mDataMap.put(m, object);
-        }
-    }*/
 }
