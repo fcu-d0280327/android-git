@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "554749832465",
+    "firebase_url": "https://wifi-105b2.firebaseio.com",
+    "project_id": "wifi-105b2",
+    "storage_bucket": "wifi-105b2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:554749832465:android:8a798e96eaebd639",
+        "android_client_info": {
+          "package_name": "com.homework.iusam.android_git"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "554749832465-0m2l93ffn527je43opa0rqer20783in8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.homework.iusam.android_git",
+            "certificate_hash": "bec7542a59b8eb387e72a50852a37ce5bfcdda93"
+          }
+        },
+        {
+          "client_id": "554749832465-500tunl85uu70kns5qllu9m9635kv7ho.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmw23U_M5jN4zZuvzS-NXin0n3LDCoeUQ"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "554749832465-500tunl85uu70kns5qllu9m9635kv7ho.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
