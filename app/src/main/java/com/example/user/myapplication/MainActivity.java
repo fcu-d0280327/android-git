@@ -45,6 +45,8 @@ import com.google.firebase.database.ValueEventListener;
 public class MainActivity extends AppCompatActivity {
 
     private FrameLayout frameContent;
+    private FrameLayout frameWifi;
+    private FrameLayout frameWifiOpenData;
 
     /**
      * global variable for second tab
@@ -52,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private WifiArrayAdapter wifi_adapter = null;
     private static final int LIST_PETS = 1;
+    private ListView wifiView;
 
     /**
      * global variables for third tab
@@ -84,12 +87,16 @@ public class MainActivity extends AppCompatActivity {
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.navigation_home:
-                    frameContent.removeAllViews();
-                    setWifiMessage(getString(R.string.title_map));
+                    frameContent.setVisibility(View.VISIBLE);
+                    frameWifi.setVisibility(View.GONE);
+                    frameWifiOpenData.setVisibility(View.GONE);
                     return true;
 
                 case R.id.navigation_dashboard:
-                    frameContent.removeAllViews();
+                    frameContent.setVisibility(View.GONE);
+                    frameWifi.setVisibility(View.GONE);
+                    frameWifiOpenData.setVisibility(View.VISIBLE);
+                    frameWifiOpenData.removeAllViews();
                     listWifi();
                     return true;
 
@@ -97,14 +104,15 @@ public class MainActivity extends AppCompatActivity {
                     if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
                         requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION);
                     }
-                    frameContent.removeAllViews();
+                    frameContent.setVisibility(View.GONE);
+                    frameWifi.setVisibility(View.VISIBLE);
+                    frameWifiOpenData.setVisibility(View.GONE);
+                    frameWifi.removeAllViews();
                     checkWifi();
                     return true;
-                
             }
             return false;
         }
-
     };
 
     @Override
@@ -116,6 +124,8 @@ public class MainActivity extends AppCompatActivity {
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
         frameContent = (FrameLayout) findViewById(R.id.content);
+        frameWifi = (FrameLayout) findViewById(R.id.frameWifi);
+        frameWifiOpenData = (FrameLayout) findViewById(R.id.frameWifiOpenData);
     }
 
 
@@ -178,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
                 FrameLayout.LayoutParams.WRAP_CONTENT);
         lp.setMargins(30, 0, 0, 0);
         wifiMessage.setText(message);
-        frameContent.addView(wifiMessage, lp);
+        frameWifi.addView(wifiMessage, lp);
     }
 
     private void setWifiList(){
@@ -187,10 +197,11 @@ public class MainActivity extends AppCompatActivity {
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT);
         fl.setMargins(25, 85, 0, 0);
+
         this.adapter = new SimpleAdapter(MainActivity.this, wifiList, R.layout.wifi_list, new String[] {"ssid","power","freq"}, new int[] {R.id.ssid, R.id.power, R.id.freq});
         listView.setAdapter(adapter);
         adapter.notifyDataSetChanged();
-        frameContent.addView(listView, fl);
+        frameWifi.addView(listView, fl);
     }
 
     private void scanWifi(){
@@ -234,10 +245,10 @@ public class MainActivity extends AppCompatActivity {
      * get wifi data from firebase where data is from opendata
      */
     private void listWifi(){
-        ListView wifiView = new ListView(this);
+        wifiView = new ListView(this);
         wifi_adapter = new WifiArrayAdapter(this, new ArrayList<Wifi>());
         wifiView.setAdapter(wifi_adapter);
-        frameContent.addView(wifiView);
+        frameWifiOpenData.addView(wifiView);
         getPetsFromFirebase();
     }
 
