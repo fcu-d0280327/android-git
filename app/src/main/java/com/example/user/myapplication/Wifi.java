@@ -6,7 +6,7 @@ public class Wifi {
 
     private String addr;
 
-    private String agency;
+    private String name;
 
     public String getAddr() {
         return addr;
@@ -16,11 +16,11 @@ public class Wifi {
         this.addr = addr;
     }
 
-    public String getAgency() {
-        return agency;
+    public String getname() {
+        return name;
     }
 
-    public void setAgency(String agency) {
-        this.agency = agency;
+    public void setName(String name) {
+        this.name = name;
     }
 }

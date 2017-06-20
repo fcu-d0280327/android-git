@@ -56,30 +56,17 @@ public class MainActivity extends AppCompatActivity {
 
     private FrameLayout frameContent;
 
-    /* wifi list view*/
-    private PetArrayAdapter adapter2 = null;
-
+    /**
+     * global variable for second tab
+     * third tab is about message of wifi from open data
+     */
+    private WifiArrayAdapter wifi_adapter = null;
     private static final int LIST_PETS = 1;
 
-    private Handler handler = new Handler() {
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case LIST_PETS: {
-                    List<Pet> pets = (List<Pet>)msg.obj;
-                    refreshPetList(pets);
-                    break;
-                }
-            }
-        }
-    };
-
-    private void refreshPetList(List<Pet> pets) {
-        adapter2.clear();
-        adapter2.addAll(pets);
-    }
-    /* wifi list view*/
-
-    //wifi-part
+    /**
+     * global variables for third tab
+     * third tab is about message of wifi around the cellphone
+     */
     private static final int PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION = 1001;
     private WifiManager wifiManager;
     ArrayList<HashMap<String, String>> wifiList = new ArrayList<HashMap<String, String>>();
@@ -95,6 +82,11 @@ public class MainActivity extends AppCompatActivity {
         wifichannel.put("2472", "2.4G Ch13");wifichannel.put("2484", "2.4G Ch14");
     }
 
+
+    /**
+     * navigation view for below three tab
+     * map, wifi list and around wifi
+     */
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
 
@@ -105,12 +97,12 @@ public class MainActivity extends AppCompatActivity {
                     frameContent.removeAllViews();
                     setWifiMessage(getString(R.string.title_map));
                     return true;
+
                 case R.id.navigation_dashboard:
                     frameContent.removeAllViews();
-                    /* wifi list view */
-                    wifilistview() ;
-                    /* wifi list view */
+                    listWifi();
                     return true;
+
                 case R.id.navigation_notifications:
                     if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
                         requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION);
@@ -118,6 +110,7 @@ public class MainActivity extends AppCompatActivity {
                     frameContent.removeAllViews();
                     checkWifi();
                     return true;
+                
             }
             return false;
         }
@@ -135,18 +128,11 @@ public class MainActivity extends AppCompatActivity {
         frameContent = (FrameLayout) findViewById(R.id.content);
     }
 
-     /* wifi list view */
-     private void wifilistview(){
-         ListView lvPets = (ListView)findViewById(R.layout.listview_pet);
-        /*  need debug */
-         adapter2 = new PetArrayAdapter(this, new ArrayList<Pet>());
-         lvPets.setAdapter(adapter2);
 
-         getPetsFromFirebase();
-     }
-    /* wifi list view */
-
-
+    /**
+     * below part is for third tab
+     * scan avalible wifi around the cellphone and list it
+     */
     private void checkWifi(){
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         if(wifiManager.isWifiEnabled() == false) {
@@ -176,8 +162,6 @@ public class MainActivity extends AppCompatActivity {
             scanWifi();
         }
     }
-
-
 
     private void setRefreshImage(){
         ImageButton ib = new ImageButton(this);
@@ -255,8 +239,35 @@ public class MainActivity extends AppCompatActivity {
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {}
     }
 
+    /**
+     * below is for second tab
+     * get wifi data from firebase where data is from opendata
+     */
+    private void listWifi(){
+        ListView wifiView = new ListView(this);
+        wifi_adapter = new WifiArrayAdapter(this, new ArrayList<Wifi>());
+        wifiView.setAdapter(wifi_adapter);
+        frameContent.addView(wifiView);
+        getPetsFromFirebase();
+    }
 
-    /* wifi list view*/
+    private Handler handler = new Handler() {
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case LIST_PETS: {
+                    List<Wifi> wifis = (List<Wifi>)msg.obj;
+                    refreshPetList(wifis);
+                    break;
+                }
+            }
+        }
+    };
+
+    private void refreshPetList(List<Wifi> pets) {
+        wifi_adapter.clear();
+        wifi_adapter.addAll(pets);
+    }
+
     class FirebaseThread extends Thread {
 
         private DataSnapshot dataSnapshot;
@@ -267,28 +278,23 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void run() {
-            List<Pet> lsPets = new ArrayList<>();
+            List<Wifi> wifis = new ArrayList<>();
             for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                DataSnapshot dsSName = ds.child("NAME");
-                DataSnapshot dsAKind = ds.child("ADDR");
+                DataSnapshot dsWifiName = ds.child("NAME");
+                DataSnapshot dsWifiAddr = ds.child("ADDR");
 
-                String shelterName = (String)dsSName.getValue();
-                String kind = (String)dsAKind.getValue();
+                String wifiName = (String)dsWifiName.getValue();
+                String wifiAddr = (String)dsWifiAddr.getValue();
 
-                DataSnapshot dsImg = ds.child("Picture1");
-                String imgUrl = (String) dsImg.getValue();
-                Bitmap petImg = getImgBitmap(imgUrl);
-
-                Pet aPet = new Pet();
-                aPet.setShelter(shelterName);
-                aPet.setKind(kind);
-                aPet.setImgUrl(petImg);
-                lsPets.add(aPet);
-                Log.v("AdoptPet", shelterName + ";" + kind);
+                Wifi aWifi = new Wifi();
+                aWifi.setName(wifiName);
+                aWifi.setAddr(wifiAddr);
+                wifis.add(aWifi);
+                Log.v("wifi-data", wifiName + ";" + wifiAddr);
             }
             Message msg = new Message();
             msg.what = LIST_PETS;
-            msg.obj = lsPets;
+            msg.obj = wifis;
             handler.sendMessage(msg);
         }
     }
@@ -304,50 +310,8 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-                Log.v("AdoptPet", databaseError.getMessage());
+                Log.e("firebase-error", databaseError.getMessage());
             }
         });
     }
-
-    private Bitmap getImgBitmap(String imgUrl) {
-        try {
-            URL url = new URL(imgUrl);
-            Bitmap bm = BitmapFactory.decodeStream(url.openConnection()
-                    .getInputStream());
-            return bm;
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    class PetArrayAdapter extends ArrayAdapter<Pet> {
-        Context context;
-
-        public PetArrayAdapter(Context context, List<Pet> items) {
-            super(context, 0, items);
-            this.context = context;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            LayoutInflater inflater = LayoutInflater.from(context);
-            LinearLayout itemlayout = null;
-            if (convertView == null) {
-                itemlayout = (LinearLayout) inflater.inflate(R.layout.pet_item, null);
-            } else {
-                itemlayout = (LinearLayout) convertView;
-            }
-            Pet item = (Pet) getItem(position);
-            TextView tvShelter = (TextView) itemlayout.findViewById(R.id.tv_shelter);
-            tvShelter.setText(item.getShelter());
-            TextView tvKind = (TextView) itemlayout.findViewById(R.id.tv_kind);
-            tvKind.setText(item.getKind());
-            return itemlayout;
-        }
-    }
-    /* wifi list view*/
-
 }
